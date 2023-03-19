@@ -19,6 +19,10 @@ import itertools
 import utils
 import ddsp.core
 
+import librosa
+import pumpp
+import matplotlib.pyplot as plt
+
 
 def load_datasets(parser, args):
     """Loads the specified dataset from commandline arguments
@@ -517,3 +521,106 @@ class BCBQDataSets(torch.utils.data.Dataset):
 
         if self.return_name: return mix, frequencies, sources, name, voices
         else: return mix, frequencies, sources
+
+
+# -------- HCQT Computation -------------------------------------------------------------------------------------------
+def get_hcqt_params():
+    bins_per_octave = 60
+    n_octaves = 5
+    over_sample = 5
+    harmonics = [1, 2, 3, 4, 5]
+    sr = 16000
+    fmin = 32.7
+    hop_length = 256
+
+    return bins_per_octave, n_octaves, harmonics, sr, fmin, hop_length, over_sample
+
+
+def get_freq_grid():
+    """Get the hcqt frequency grid"""
+    (bins_per_octave, n_octaves, _, _, f_min, _, over_sample) = get_hcqt_params()
+    freq_grid = librosa.cqt_frequencies(
+        n_octaves * 12 * over_sample, f_min, bins_per_octave=bins_per_octave
+    )
+    return freq_grid
+
+
+def get_time_grid(n_time_frames):
+    """Get the hcqt time grid"""
+    (_, _, _, sr, _, hop_length, _) = get_hcqt_params()
+    time_grid = librosa.core.frames_to_time(
+        range(n_time_frames), sr=sr, hop_length=hop_length
+    )
+    return time_grid
+
+
+def grid_to_bins(grid, start_bin_val, end_bin_val):
+    """Compute the bin numbers from a given grid"""
+    bin_centers = (grid[1:] + grid[:-1]) / 2.0
+    bins = np.concatenate([[start_bin_val], bin_centers, [end_bin_val]])
+    return bins
+
+
+def create_pump_object():
+    (
+        bins_per_octave,
+        n_octaves,
+        harmonics,
+        sr,
+        f_min,
+        hop_length,
+        over_sample,
+    ) = get_hcqt_params()
+
+    p_phdif = pumpp.feature.HCQTPhaseDiff(
+        name="dphase",
+        sr=sr,
+        hop_length=hop_length,
+        fmin=f_min,
+        n_octaves=n_octaves,
+        over_sample=over_sample,
+        harmonics=harmonics,
+        log=True,
+    )
+
+    pump = pumpp.Pump(p_phdif)
+
+    return pump
+
+
+def compute_pump_features(pump, audio_fpath):
+    data = pump(audio_f=audio_fpath, sr=16000)
+    return data
+
+
+def test_hcqt():
+    audio_fpath = "/home/pierre/OneDrive/TELECOM/code/umss-pre/Datasets/ChoralSingingDataset/El_Rossinyol/audio_16kHz/rossinyol_Bajos_107.wav"
+    pump = create_pump_object()
+    features = compute_pump_features(pump, audio_fpath)
+
+    hcqt = features['dphase/mag'][0]
+    dphase = features['dphase/dphase'][0]
+    
+    hcqt = hcqt.transpose(2, 1, 0)[np.newaxis, :, :, :]
+    dphase = dphase.transpose(2, 1, 0)[np.newaxis, :, :, :]
+    
+    print(hcqt.shape, dphase.shape)
+    
+    for i in range(5):
+        plt.imshow(
+            hcqt[0, i, :, :],
+            origin="lower",
+            aspect="auto",
+            cmap="inferno",
+        )
+        plt.savefig(f"figures/hcqt_mag_{i}.png")
+
+        plt.imshow(
+            dphase[0, i, :, :],
+            origin="lower",
+            aspect="auto",
+            cmap="inferno",
+        )
+        plt.savefig(f"figures/hcqt_dphase_{i}.png")
+
+test_hcqt()

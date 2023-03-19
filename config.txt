@@ -89,3 +89,5 @@ estimate-noise-mags = True  # estimate constant noise shape for voiced frames
 # switch-off-noise = False
 f-ref-source-spec = 200
 # source-spectrum = flat
+
+return-sources = True

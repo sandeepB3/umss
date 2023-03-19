@@ -102,6 +102,7 @@ Temporary Items
 .idea/
 
 # my directories
+/figures/*
 /robustness_tests/evaluation/
 /robustness_tests/robustness_eval_log.csv
 /trained_models/*

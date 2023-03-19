@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 
 import network_components as nc
 from ddsp import spectral_ops, synths, core
@@ -11,7 +12,112 @@ from scipy.ndimage import filters
 import numpy as np
 
 
+# -------- F0 extraction model based on Cuesta's model -------------------------------------------------------------------------------------------
+# Reproduce Cuesta's model3 - Late/Deep
+class Base_model(nn.Module):
+    def __init__(self, in_channel):
+        super(Base_model).__init__()
 
+        self.in_channel = in_channel
+        self.k_filter = 32
+        self.k_width = 5
+        self.k_height = 5
+
+        self.net = nn.Sequential(
+            nn.BatchNorm2d(),
+            # conv1
+            nn.Conv2d(
+                self.in_channel,
+                self.k_filter // 2,
+                (self.k_width, self.k_height),
+                padding="same",
+            ),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv2
+            nn.Conv2d(
+                self.k_filter // 2,
+                self.k_filter,
+                (self.k_width, self.k_height),
+                padding="same",
+            ),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv2
+            nn.Conv2d(
+                self.k_filter,
+                self.k_filter,
+                (self.k_width, self.k_height),
+                padding="same",
+            ),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv2
+            nn.Conv2d(
+                self.k_filter,
+                self.k_filter,
+                (self.k_width, self.k_height),
+                padding="same",
+            ),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv2
+            nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv2
+            nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+        )
+
+    def forward(self, input):
+        return self.net(input), input
+
+
+class F0Extractor(_Model):
+    def __init__(self):
+        super(F0Extractor).__init__()
+
+        self.input_channels = 5
+        self.base_model = Base_model(self.input_channels)
+
+        self.model = nn.Sequential(
+            # conv7 layer
+            nn.Conv2d(64, 64, (3, 3), padding="same"),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv8 layer
+            nn.Conv2d(64, 64, (3, 3), padding="same"),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # conv9 layer
+            nn.Conv2d(64, 8, (360, 1), padding="same"),
+            nn.ReLU(),
+            nn.BatchNorm2d(),
+            # output layer
+            nn.Conv2d(8, 1, (1, 1), padding="same"),
+            nn.Sigmoid(),
+        )
+
+    @classmethod
+    def from_config(cls, config: dict):
+        return cls()
+
+    def forward(self, input1, input2):
+        y6a = self.base_model(input1)
+        y6b = self.base_model(input2)
+
+        # concatenate features
+        y6c = torch.cat((y6a, y6b), dim=0)
+
+        y10 = self.model(y6c)
+        predictions = torch.squeeze(y10, dim=0)
+
+        return predictions
+
+
+# -------- Unsupervised Model for Source Separation ----------------------------------------------------------------------------------------------
 class SourceFilterMixtureAutoencoder2(_Model):
 
     """Autoencoder that encodes a mixture of n voices into synthesis parameters
