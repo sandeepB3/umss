@@ -23,7 +23,7 @@ from ddsp import losses
 
 tqdm.monitor_interval = 0
 
-def train(args, network, device, train_sampler, optimizer, ss_weights_dict):
+def train(args, network, device, train_sampler, optimizer, ss_weights_dict, epoch, writer):
     loss_container = utils.AverageMeter()
     network.train()
     if args.loss_lsf_weight > 0: network.return_lsf = True
@@ -34,9 +34,14 @@ def train(args, network, device, train_sampler, optimizer, ss_weights_dict):
         pbar.set_description("Training batch")
         x = data[0]  # mix
         f0 = data[1]  # f0
-        x, f0 = x.to(device), f0.to(device)
+        original_sources = data[2] # sources
+        x, f0, original_sources = x.to(device), f0.to(device), original_sources.to(device)
         optimizer.zero_grad()
-        y_hat = network(x, f0)
+        
+        if network.return_sources == True:
+            y_hat, sources = network(x, f0)
+        else:
+            y_hat = network(x, f0)
 
         loss = 0.
         if args.reconstruction_loss_weight > 0:
@@ -66,11 +71,29 @@ def train(args, network, device, train_sampler, optimizer, ss_weights_dict):
 
         loss.backward()
         optimizer.step()
-        loss_container.update(loss.item(), f0.size(0))
+        loss_container.update(loss.item(), f0.size(0))       
+        
+    # log audio to tensorboard
+    if network.return_sources == True:
+        # [batch_size, n_sources, n_samples]
+        source_estimates_masking = utils.masking_from_synth_signals_torch(x, sources, n_fft=2048, n_hop=256)
+        source_estimates_masking = source_estimates_masking.reshape((args.batch_size, args.n_sources, -1))
+        
+        writer.add_audio('train/mix/original', x[0] / torch.max(torch.abs(x[0])), global_step=epoch-1, sample_rate=args.samplerate)
+        writer.add_audio('train/mix/reconstruct', y_hat[0] / torch.max(torch.abs(y_hat[0])), global_step=epoch-1, sample_rate=args.samplerate)
+        
+        for n_sources in range(args.n_sources):
+            writer.add_audio(f'train/original_sources/source_{n_sources}', original_sources[0,:,n_sources] / torch.max(torch.abs(original_sources[0,:,n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+            writer.add_audio(f'train/generated_sources/source_{n_sources}', sources[0][n_sources] / torch.max(torch.abs(sources[0][n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+            writer.add_audio(f'train/mask_sources/source_{n_sources}', source_estimates_masking[0][n_sources] / torch.max(torch.abs(source_estimates_masking[0][n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+    else:
+        writer.add_audio('train/mix', x[0] / torch.max(torch.abs(x[0])), global_step=epoch-1, sample_rate=args.samplerate)
+        writer.add_audio('train/mix/reconstruct', y_hat[0] / torch.max(torch.abs(y_hat[0])), global_step=epoch-1, sample_rate=args.samplerate)
+        
     return loss_container.avg
 
 
-def valid(args, network, device, valid_sampler):
+def valid(args, network, device, valid_sampler, epoch, writer):
     loss_container = utils.AverageMeter()
     network.eval()
     if args.supervised: network.return_sources = True
@@ -78,9 +101,13 @@ def valid(args, network, device, valid_sampler):
         for data in valid_sampler:
             x = data[0]  # audio
             f0 = data[1]  # f0
-            x, f0 = x.to(device), f0.to(device) #, z.to(device)
+            original_sources = data[2] # sources
+            x, f0, original_sources = x.to(device), f0.to(device), original_sources.to(device) #, z.to(device)
 
-            y_hat = network(x, f0)
+            if network.return_sources == True:
+                y_hat, sources = network(x, f0)
+            else:
+                y_hat = network(x, f0)
 
             loss_fn = losses.SpectralLoss(fft_sizes=args.loss_nfft,
                                           mag_weight=args.loss_mag_weight,
@@ -94,6 +121,26 @@ def valid(args, network, device, valid_sampler):
                 y_hat = y_hat[1].reshape((batch_size * args.n_sources, -1))  # source estimates [batch_size * n_sources, n_samples]
             loss = loss_fn(x, y_hat)
             loss_container.update(loss.item(), f0.size(0))
+        
+        # log audio to tensorboard
+        if network.return_sources == True:
+            batch_size = f0.size(0)
+            
+            # [batch_size * n_sources, n_samples]
+            source_estimates_masking = utils.masking_from_synth_signals_torch(x, sources, n_fft=2048, n_hop=256)
+            source_estimates_masking = source_estimates_masking.reshape((batch_size, args.n_sources, -1))
+            writer.add_audio('valid/mix/original', x[0] / torch.max(torch.abs(x[0])), global_step=epoch-1, sample_rate=args.samplerate)
+            writer.add_audio('valid/mix/reconstruct', y_hat[0] / torch.max(torch.abs(y_hat[0])), global_step=epoch-1, sample_rate=args.samplerate)
+            
+            for n_sources in range(args.n_sources):
+                writer.add_audio(f'valid/original_sources/source_{n_sources}', original_sources[0,:,n_sources] / torch.max(torch.abs(original_sources[0,:,n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+                writer.add_audio(f'valid/generated_sources/source_{n_sources}', sources[0][n_sources] / torch.max(torch.abs(sources[0][n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+                writer.add_audio(f'valid/mask_sources/source_{n_sources}', source_estimates_masking[0][n_sources] / torch.max(torch.abs(source_estimates_masking[0][n_sources])), global_step=epoch-1, sample_rate=args.samplerate)
+                
+        else:
+            writer.add_audio('valid/mix', x[0] / torch.max(torch.abs(x[0])), global_step=epoch-1, sample_rate=args.samplerate)
+            writer.add_audio('valid/mix/reconstruct', y_hat[0] / torch.max(torch.abs(y_hat[0])), global_step=epoch-1, sample_rate=args.samplerate)
+        
         return loss_container.avg
 
 
@@ -238,6 +285,7 @@ def main():
     parser.add_argument('--estimate-noise-mags', action='store_true', default=False)
     parser.add_argument('--unidirectional', action='store_true', default=False)
     parser.add_argument('--voiced-unvoiced-same-noise', action='store_true', default=False)
+    parser.add_argument('--return-sources', action='store_true', default=False)
 
 
     parser.add_argument('--nb-workers', type=int, default=4,
@@ -364,14 +412,14 @@ def main():
         t.set_description("Training Epoch")
         end = time.time()
 
-        train_loss = train(args, model_to_train, device, train_sampler, optimizer, ss_weights_dict)
+        train_loss = train(args, model_to_train, device, train_sampler, optimizer, ss_weights_dict, epoch, writer)
 
         # calculate validation loss only if model is not optimized on one single example
         if args.one_example or args.one_batch or (args.dataset == 'synthetic'):
             # if overfitting on one example, early stopping is done based on training loss
             valid_loss = train_loss
         else:
-            valid_loss = valid(args, model_to_train, device, valid_sampler)
+            valid_loss = valid(args, model_to_train, device, valid_sampler, epoch, writer)
             writer.add_scalar("Validation_cost", valid_loss, epoch)
             valid_losses.append(valid_loss)
 

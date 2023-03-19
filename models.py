@@ -108,6 +108,7 @@ class SourceFilterMixtureAutoencoder2(_Model):
         estimate_noise_mags = config['estimate_noise_mags'] if 'estimate_noise_mags' in keys else False
         bidirectional = not config['unidirectional'] if 'unidirectional' in keys else True
         voiced_unvoiced_diff = not config['voiced_unvoiced_same_noise'] if 'voiced_unvoiced_same_noise' in keys else True
+        return_sources = config['return_sources'] if 'return_sources' in keys else False
 
         return cls(filter_order=filter_order,
                    fft_size=config['nfft'],
@@ -122,7 +123,8 @@ class SourceFilterMixtureAutoencoder2(_Model):
                    decoder_output_size=decoder_output_size,
                    n_sources=n_sources,
                    bidirectional=bidirectional,
-                   voiced_unvoiced_diff=voiced_unvoiced_diff)
+                   voiced_unvoiced_diff=voiced_unvoiced_diff,
+                   return_sources=return_sources)
 
 
     def forward(self, audio, f0_hz):
