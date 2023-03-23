@@ -113,6 +113,15 @@ pd.set_option("display.max_rows", None, "display.max_columns", None)
 if is_u_net: n_seeds = 1
 else: n_seeds = 5
 
+# index of signals to be removed in evaluation due to too low energy (considered as silence)
+# mandatory to obtain the same results as in the paper
+energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets.pandas')
+energy_to_drop = []
+for i, energy in enumerate(energy_snippet["energy"]):
+    if energy < 10:
+        for j in range(n_seeds):
+            energy_to_drop.append(i + j * 1632)
+
 for seed in range(n_seeds):
     torch.manual_seed(seed)
     rng_state_torch = torch.get_rng_state()
@@ -243,20 +252,28 @@ for seed in range(n_seeds):
 
 
 if compute_results:
-    # save data frame with all results
-    if not is_u_net: eval_results.to_pickle(path_to_save_results + '/all_results.pandas')
+    if not is_u_net: 
+        # drop results for energy below threshold
+        eval_results = eval_results.drop(energy_to_drop)
+        
+        # save data frame with all results
+        eval_results.to_pickle(path_to_save_results + '/all_results.pandas')
 
     # compute mean, median, std over all voices and mixes and eval_frames
     means = eval_results.mean(axis=0, skipna=True, numeric_only=True)
     medians = eval_results.median(axis=0, skipna=True, numeric_only=True)
     stds = eval_results.std(axis=0, skipna=True, numeric_only=True)
 
-    print(tag)
+    print("\n" + tag)
     print('sp_SNR:', 'mean', means['sp_SNR'], 'median', medians['sp_SNR'], 'std', stds['sp_SNR'])
     print('sp_SI-SNR', 'mean', means['sp_SI-SNR'], 'median', medians['sp_SI-SNR'], 'std', stds['sp_SI-SNR'])
     print('mel cepstral distance', 'mean', means['mel_cep_dist'], 'median', medians['mel_cep_dist'], 'std', stds['mel_cep_dist'])
 
 if compute_results_masking:
+    
+    # drop results for energy below threshold
+    eval_results_masking = eval_results_masking.drop(energy_to_drop)
+    
     # save data frame with all results
     eval_results_masking.to_pickle(path_to_save_results_masking + '/all_results.pandas')
 
