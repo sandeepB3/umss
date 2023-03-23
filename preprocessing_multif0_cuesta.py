@@ -64,8 +64,8 @@ def compute_frame_distance(frame_1, frame_2, assigned_frames=None, n=0, backward
 
 
 
-path_to_dataset = '../Datasets/ChoralSingingDataset'
-songs = ['El Rossinyol', 'Locus Iste', 'Nino Dios']
+path_to_dataset = './Datasets/ChoralSingingDataset'
+songs = ['El_Rossinyol', 'Locus_Iste', 'Nino_Dios']
 
 mixture_dirs = ['mixtures_2_sources', 'mixtures_3_sources', 'mixtures_4_sources']
 
@@ -247,9 +247,9 @@ for song in songs:
                     pass
 
 
-            if song == 'El Rossinyol': audio_length = 134
-            elif song == 'Locus Iste': audio_length = 190
-            elif song == 'Nino Dios': audio_length = 103
+            if song == 'El_Rossinyol': audio_length = 134
+            elif song == 'Locus_Iste': audio_length = 190
+            elif song == 'Nino_Dios': audio_length = 103
 
             # compute number of STFT frames for the song
             n_stft_frames = 16000 * audio_length // 256
