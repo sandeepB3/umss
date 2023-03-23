@@ -113,14 +113,21 @@ pd.set_option("display.max_rows", None, "display.max_columns", None)
 if is_u_net: n_seeds = 1
 else: n_seeds = 5
 
+
+# Load energy snippets
 # index of signals to be removed in evaluation due to too low energy (considered as silence)
 # mandatory to obtain the same results as in the paper
-energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets.pandas')
+if model_args['n_sources'] == 4:
+    energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets_4s.pandas')
+elif model_args['n_sources'] == 2:
+    # for 2s the results are not the same as in the paper (~2% of difference for SI-SDR)
+    energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets_2s.pandas')
+    
 energy_to_drop = []
 for i, energy in enumerate(energy_snippet["energy"]):
-    if energy < 10:
+    if energy <= 10:
         for j in range(n_seeds):
-            energy_to_drop.append(i + j * 1632)
+            energy_to_drop.append(i + j * len(energy_snippet["energy"]))
 
 for seed in range(n_seeds):
     torch.manual_seed(seed)
@@ -282,7 +289,7 @@ if compute_results_masking:
     medians_masking = eval_results_masking.median(axis=0, skipna=True, numeric_only=True)
     stds_masking = eval_results_masking.std(axis=0, skipna=True, numeric_only=True)
 
-    print(tag + '_masking')
+    print("\n" + tag + '_masking')
     print('SI-SDR', 'mean', means_masking['SI-SDR'], 'median', medians_masking['SI-SDR'], 'std', stds_masking['SI-SDR'])
     print('sp_SNR', 'mean', means_masking['sp_SNR'], 'median', medians_masking['sp_SNR'], 'std', stds_masking['sp_SNR'])
     print('sp_SI-SNR', 'mean', means_masking['sp_SI-SNR'], 'median', medians_masking['sp_SI-SNR'], 'std', stds_masking['sp_SI-SNR'])
