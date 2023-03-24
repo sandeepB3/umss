@@ -120,12 +120,11 @@ else: n_seeds = 5
 if model_args['n_sources'] == 4:
     energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets_4s.pandas')
 elif model_args['n_sources'] == 2:
-    # for 2s the results are not the same as in the paper (~2% of difference for SI-SDR)
     energy_snippet = pd.read_pickle('./Datasets/ChoralSingingDataset/energy_snippets_2s.pandas')
     
 energy_to_drop = []
 for i, energy in enumerate(energy_snippet["energy"]):
-    if energy <= 10:
+    if energy < 10:
         for j in range(n_seeds):
             energy_to_drop.append(i + j * len(energy_snippet["energy"]))
 
