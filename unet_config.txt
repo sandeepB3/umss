@@ -10,7 +10,7 @@ architecture: BaselineUnet
 
 # -------- DATASET PARAMETERS -----------------------
 
-dataset = BCBQ
+dataset = CSD
 one-song = True
 one-example = False
 one-batch = False
