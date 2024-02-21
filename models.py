@@ -24,7 +24,7 @@ class Base_model(nn.Module):
         self.k_height = 5
 
         self.net = nn.Sequential(
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv1
             nn.Conv2d(
                 self.in_channel,
@@ -33,7 +33,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv2
             nn.Conv2d(
                 self.k_filter // 2,
@@ -42,7 +42,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv2
             nn.Conv2d(
                 self.k_filter,
@@ -51,7 +51,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv2
             nn.Conv2d(
                 self.k_filter,
@@ -60,15 +60,15 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv2
             nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
             # conv2
             nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.in_channel),
         )
 
     def forward(self, input):
@@ -86,15 +86,15 @@ class F0Extractor(_Model):
             # conv7 layer
             nn.Conv2d(64, 64, (3, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.input_channels),
             # conv8 layer
             nn.Conv2d(64, 64, (3, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.input_channels),
             # conv9 layer
             nn.Conv2d(64, 8, (360, 1), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(),
+            nn.BatchNorm2d(num_features=self.input_channels),
             # output layer
             nn.Conv2d(8, 1, (1, 1), padding="same"),
             nn.Sigmoid(),
