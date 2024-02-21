@@ -16,7 +16,7 @@ import numpy as np
 # Reproduce Cuesta's model3 - Late/Deep
 class Base_model(nn.Module):
     def __init__(self, in_channel):
-        super(Base_model).__init__()
+        super(Base_model, self).__init__()
 
         self.in_channel = in_channel
         self.k_filter = 32
@@ -75,9 +75,9 @@ class Base_model(nn.Module):
         return self.net(input), input
 
 
-class F0Extractor(_Model):
+class F0Extractor(nn.Module):
     def __init__(self):
-        super(F0Extractor).__init__()
+        super(F0Extractor, self).__init__()
 
         self.input_channels = 5
         self.base_model = Base_model(self.input_channels)
