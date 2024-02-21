@@ -24,7 +24,7 @@ class Base_model(nn.Module):
         self.k_height = 5
 
         self.net = nn.Sequential(
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv1
             nn.Conv2d(
                 self.in_channel,
@@ -33,7 +33,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv2
             nn.Conv2d(
                 self.k_filter // 2,
@@ -42,7 +42,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv2
             nn.Conv2d(
                 self.k_filter,
@@ -51,7 +51,7 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv2
             nn.Conv2d(
                 self.k_filter,
@@ -60,15 +60,15 @@ class Base_model(nn.Module):
                 padding="same",
             ),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv2
             nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
             # conv2
             nn.Conv2d(self.k_filter, self.k_filter, (70, 3), padding="same"),
             nn.ReLU(),
-            nn.BatchNorm2d(num_features=in_channel),
+            nn.BatchNorm2d(),
         )
 
     def forward(self, input):
