@@ -75,8 +75,8 @@ class Base_model(nn.Module):
         return self.net(input), input
 
 
-class F0Extractor(_Model):
-    def __init__(self):
+class F0Extractor(Base_model):
+    def __init__(self, Base_model):
         super(F0Extractor, self).__init__()
 
         self.input_channels = 5
