@@ -16,7 +16,7 @@ mixed_audio, sample_rate = torchaudio.load(audio_file)
 resample = Resample(orig_freq=sample_rate, new_freq=16000) # architecture is designed for signals sampled at 16kHz
 mixed_audio_resampled = resample(mixed_audio)
 
-input_audio = mixed_audio_resampled.unsqueeze(0) # Expand dimensions to match the expected shape [batch_size, n_samples]
+input_audio = mixed_audio_resampled.unsqueeze(1) # Expand dimensions to match the expected shape [batch_size, n_samples]
 
 print("Input Audio:\n")
 print("Input Audio Dimesnion: ", input_audio.size(),"\n")
