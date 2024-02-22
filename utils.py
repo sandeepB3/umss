@@ -203,7 +203,7 @@ def load_model(tag, device='cpu', return_args=False):
     """
 
     """
-    model_path = 'trained_models/{}'.format(tag)
+    model_path = 'trained_model/{}'.format(tag)
     # load model from disk
     with open(Path(model_path, tag + '.json'), 'r') as stream:
         results = json.load(stream)
