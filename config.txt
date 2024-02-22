@@ -31,7 +31,7 @@ voices = satb  # satb
 
 # -------- TRAINING PARAMETERS -----------------------
 
-epochs = 8000
+epochs = 4000
 batch-size = 16
 lr = 0.0001
 patience = 200
@@ -41,7 +41,7 @@ weight-decay = 0.00001
 seed = 4
 nb-workers = 10
 quiet = False
-no-cuda = False
+no-cuda = True
 
 supervised = False
 reconstruction-loss-weight = 1
