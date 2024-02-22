@@ -1,6 +1,6 @@
 # ----- GENERAL PARAMETERS ---------------------------
 
-tag: unsupervised_2s_bc1song_mf0_1
+tag: unsupervised_2s_CSD_mf0_1
 comment: 2 sources on BC 1 song, supervised.
 architecture: SourceFilterMixtureAutoencoder2
 
