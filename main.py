@@ -18,10 +18,18 @@ mixed_audio_resampled = resample(mixed_audio)
 
 input_audio = mixed_audio_resampled.unsqueeze(0) # Expand dimensions to match the expected shape [batch_size, n_samples]
 
+print("Input Audio:\n")
+print("Input Audio Dimesnion: ", input_audio.size(),"\n")
+print("Input Audio Info: ", input_audio,"\n")
+
 # Loading the F0 information of nino_dios_Sno_105_Bos_104.pt file
 f0_file = "./Datasets/ChoralSingingDataset/Nino_Dios/mixtures_2_sources/mf0_cuesta_processed/nino_dios_Sno_105_Bos_104.pt"
 input_f0 = torch.load(f0_file)
 input_f0 = input_f0.unsqueeze(0) #Ensuring the shape is appropriate for your model ([batch_size, n_freq_frames, n_sources])
+
+print("Input F0:\n")
+print("Input F0 Dimesnion: ", input_f0.size(),"\n")
+print("Input F0 Info: ", input_f0,"\n")
 
 # Perform inference
 with torch.no_grad():
