@@ -41,7 +41,7 @@ weight-decay = 0.00001
 seed = 4
 nb-workers = 10
 quiet = False
-no-cuda = True
+no-cuda = False
 
 supervised = False
 reconstruction-loss-weight = 1
