@@ -31,6 +31,14 @@ print("Input F0:\n")
 print("Input F0 Dimesnion: ", input_f0.size(),"\n")
 print("Input F0 Info: ", input_f0,"\n")
 
+not_all_zeros = not torch.all(torch.eq(input_f0, 0.))
+
+if not_all_zeros:
+    print("The tensor is not entirely filled with zeros.")
+else:
+    print("The tensor is entirely filled with zeros.")
+
+
 # Perform inference
 with torch.no_grad():
     output = umss_model(input_audio, input_f0)
